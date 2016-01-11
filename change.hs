@@ -1,3 +1,4 @@
+import Control.Monad.State
 import qualified Data.Map.Strict as M
 
 us :: Num a => [a]
@@ -29,6 +30,43 @@ mways coins n = fst $ f coins n M.empty where
         memoized = M.lookup (cs, n) m
         compute  = let (a, m') = f cs n m in (a, M.insert (cs, n) a m')
         wrap a   = (a, m)
+
+type Problem = ([Int], Int)
+type Memotable = M.Map Problem Int
+
+sWays' coins n = fst $ runState (sWays coins n) M.empty
+
+sWays :: [Int] -> Int -> State Memotable Int
+sWays [] _ = return 0
+sWays _ 0  = return 1
+sWays (c:cs) n | n < 0 = return 0
+               | otherwise = do
+  m <- get
+  x <- maybe (sWays (c:cs) (n - c)) return (M.lookup ((c:cs), (n - c)) m)
+  modify $ M.insert ((c:cs), (n - c)) x
+  m' <- get
+  y <- maybe (sWays cs n) return (M.lookup (cs, n) m')
+  modify $ M.insert (cs, n) y
+  return (x + y)
+
+bar coins n = do
+  m <- get
+  x <- maybe (sWays coins n) return (M.lookup (coins, n) m)
+  modify $ M.insert (coins, n) x
+
+
+
+-- Given a function Problem -> Int we want to use it when we haven't
+-- already computed the answer *and* we want it to use the memoized
+-- version when it recurses.
+
+
+
+foo :: (Problem -> Int) -> (Problem, Memotable) -> (Int, Memotable)
+foo f (p, m) = maybe (computed, M.insert p computed m) (\a -> (a, m)) memoized where
+    memoized = M.lookup p m
+    computed = f p
+
 
 -- Hand roll some linked together infinite lists. Note however, that
 -- the first item of these lists represents the number of ways to make
