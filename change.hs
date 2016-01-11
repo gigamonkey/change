@@ -1,5 +1,6 @@
 import qualified Data.Map.Strict as M
 
+us :: Num a => [a]
 us = [1,5,10,25,50]
 
 -- Relatively simple recursive solution: the number of ways to make
@@ -14,22 +15,20 @@ ways _ 0  = 1
 ways (c:cs) n | n < 0 = 0
               | otherwise = ways (c:cs) (n - c) + ways cs n
 
-
 -- Memoizing version. On the way down we build up a map of every
 -- value we compute so we don't compute them over and over again.
-
-type Memotable = M.Map ([Int], Int) Int
 
 mways coins n = fst $ f coins n M.empty where
     f [] _ m     = (0, m)
     f _ 0 m      = (1, m)
-    f (c:cs) n m = if n < 0 then (0, m) else (a + a', m'') where
-        (a, m')   = foo (c:cs) (n - c) m
-        (a', m'') = foo cs n m'
-    foo cs n m = maybe (a, M.insert (cs, n) a m') wrap memoized where
+    f (c:cs) n m | n < 0 = (0, m)
+                 | otherwise = (a + a', m'') where
+                   (a, m')   = foo (c:cs) (n - c) m
+                   (a', m'') = foo cs n m'
+    foo cs n m = maybe compute wrap memoized where
         memoized = M.lookup (cs, n) m
-        (a, m') = f cs n m
-        wrap a = (a, m)
+        compute  = let (a, m') = f cs n m in (a, M.insert (cs, n) a m')
+        wrap a   = (a, m)
 
 -- Hand roll some linked together infinite lists. Note however, that
 -- the first item of these lists represents the number of ways to make
@@ -61,5 +60,9 @@ halfDollars' = coin quarters' 50
 -- the list each time but that means the front of the list can get GC'd.
 ways' coins = ((1 : foldl coin (repeat 0) coins) !!)
 
-
-main = print $ ways' [1,5,10,25,50] 10000
+main = do
+  print $ ways us 100
+  print $ mways us 10000
+  print $ (1:halfDollars) !! 100000
+  print $ (1:halfDollars') !! 100000
+  print $ ways' us 100000
