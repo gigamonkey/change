@@ -45,13 +45,15 @@ solutions' = [ ways c n | n <- [0..], c <- [0 .. length us] ] where
     ways c n = if n < 0 then 0 else ways c (n - (us !! (c - 1))) + ways (c - 1) n
 
 mways coins n = solutions !! idx (length coins) n where
-    solutions = [ ways c n | n <- [0 ..], c <- [0 .. length coins] ]
-    idx c n   = ((n * (length coins + 1)) + (c - 1)) + 1
-    ways 0 _  = 0
-    ways _ 0  = 1
-    ways c n  | n < 0 = 0
-              | otherwise = (if n >= (coins !! (c - 1)) then solutions !! idx c (n - (coins !! (c - 1))) else 0) +
-                            (if c > 0 then solutions !! idx (c - 1) n else 0)
+    solutions = [ ways c n | n <- [0 .. ], c <- [0 .. length coins] ]
+    ways c n | c == 0 = 0
+             | n == 0 = 1
+             | n < 0 = 0
+             | otherwise = recur c (n - (coins !! (c - 1))) + recur (c - 1) n
+    recur c n | n < 0 = 0
+              | c < 0 = 0
+              | otherwise = solutions !! idx c n
+    idx c n = ((n * (length coins + 1)) + (c - 1)) + 1
 
 -- Memoizing using the State monad. Similar to above except that the
 -- Map of memoized values is threaded through the monad rather than
