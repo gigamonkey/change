@@ -21,7 +21,10 @@ ways (c:cs) n = if n < 0 then 0 else ways (c:cs) (n - c) + ways cs n
 -- Memoizing version. On the way down we build up a map of every
 -- value we compute so we don't compute them over and over again.
 
-ways' coins n = fst $ f coins n M.empty where
+emptyTable :: M.Map ([Int], Int) Int
+emptyTable = M.empty
+
+ways' coins n = fst $ f coins n emptyTable where
     f [] _ m     = (0, m)
     f _ 0 m      = (1, m)
     f (c:cs) n m = if n < 0 then (0, m) else (a + a', m'') where
@@ -31,11 +34,30 @@ ways' coins n = fst $ f coins n M.empty where
         compute  = let (a, m') = f cs n m in (a, M.insert (cs, n) a m')
         wrap a   = (a, m)
 
+mfib = (map fib [0..] !!) where
+    fib 0 = 0
+    fib 1 = 1
+    fib n = mfib (n - 2) + mfib (n - 1)
+
+solutions' = [ ways c n | n <- [0..], c <- [0 .. length us] ] where
+    ways 0 _ = 0
+    ways _ 0  = 1
+    ways c n = if n < 0 then 0 else ways c (n - (us !! (c - 1))) + ways (c - 1) n
+
+mways coins n = solutions !! idx (length coins) n where
+    solutions = [ ways c n | n <- [0 ..], c <- [0 .. length coins] ]
+    idx c n   = ((n * (length coins + 1)) + (c - 1)) + 1
+    ways 0 _  = 0
+    ways _ 0  = 1
+    ways c n  | n < 0 = 0
+              | otherwise = (if n >= (coins !! (c - 1)) then solutions !! idx c (n - (coins !! (c - 1))) else 0) +
+                            (if c > 0 then solutions !! idx (c - 1) n else 0)
+
 -- Memoizing using the State monad. Similar to above except that the
 -- Map of memoized values is threaded through the monad rather than
 -- explicitly which makes things a bit more tidy.
 
-ways'' coins n = evalState (f coins n) (M.empty :: (M.Map ([Int], Int) Int)) where
+ways'' coins n = evalState (f coins n) emptyTable where
     f [] _     = return 0
     f _ 0      = return 1
     f (c:cs) n = if n < 0 then return 0 else (+) <$> recur (c:cs) (n - c) <*> recur cs n
