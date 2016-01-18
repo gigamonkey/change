@@ -1,7 +1,7 @@
+import Control.Monad
 import Control.DeepSeq
 import Control.Exception
 import Control.Monad.State
-import Criterion.Main
 import Debug.Trace
 import System.CPUTime
 import Text.Printf
@@ -32,16 +32,16 @@ ways (c:cs) n = if n < 0 then 0 else ways (c:cs) (n - c) + ways cs n
 -- invocations.
 
 tWays :: [Int] -> Int -> Integer
-tWays [] n     = trace (show (([] :: [Int]), n)) 0
+tWays [] n     = trace (show ([] :: [Int], n)) 0
 tWays cs 0     = trace (show (cs, 0)) 1
-tWays (c:cs) n = trace (show ((c:cs), n)) (if n < 0 then 0 else tWays (c:cs) (n - c) + tWays cs n)
+tWays (c:cs) n = trace (show (c:cs, n)) (if n < 0 then 0 else tWays (c:cs) (n - c) + tWays cs n)
 
 fib = (map f [0 .. ] !!) where
     f 0 = 0
     f 1 = 1
     f n = fib (n - 2) + fib (n - 1)
 
-fib' n = (fibs !! n) where
+fib' n = fibs !! n where
     fibs = [ f x | x <- [0 .. ] ]
     f 0 = 0
     f 1 = 1
@@ -146,19 +146,17 @@ time fn n = do
   start <- getCPUTime
   x     <- evaluate $ force $ fn us n
   end   <- getCPUTime
-  let diff = (fromIntegral (end - start)) / (10^12)
-  return (diff, x)
+  return (fromIntegral (end - start) / (10^12), x)
 
 emit :: String -> Int -> (Double, Integer) -> IO ()
-emit label n (time, result) = printf "%s %d: %0.9f sec. Result %d\n" label n time result
+emit label n (t, r) = printf "%s %d: %0.9f sec. Result %d\n" label n t r
 
+check :: String -> ([Int] -> Int -> Integer) -> Int -> IO ()
 check label fn n = do
-  (time, r) <- time fn n
-  emit label n (time, r)
-  if time < 2 then check label fn (n * 10) else return ()
+  (t, r) <- time fn n
+  emit label n (t, r)
+  when (t < 2) $ check label fn (n * 10)
 
---main =  mapM_ (\(label, fn, n) -> (time (fn :: ([Int] -> Int -> Integer)) n) >>= (emit label n)) $ [ (label, fn, n)  | (label, fn) <- benchmarks, n <- [100, 1000, 10000, 100000, 1000000]]
-
+main :: IO ()
 main = mapM_ (\(label, fn) -> check label fn 1) benchmarks
-
 --main = print $ (tWays us 100)
