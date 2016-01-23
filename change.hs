@@ -1,7 +1,8 @@
-import Control.Monad
 import Control.DeepSeq
 import Control.Exception
+import Control.Monad
 import Control.Monad.State
+import Data.Maybe
 import Debug.Trace
 import System.CPUTime
 import Text.Printf
@@ -30,6 +31,25 @@ ways (c:cs) n = if n < 0 then 0 else ways (c:cs) (n - c) + ways cs n
 -- called 38,901 times with a 165 combinations being called 100 times
 -- or more. And it grows fast: to compute $1.10 it takes 53,301
 -- invocations.
+
+type Counts = M.Map ([Int], Int) (Int, Int)
+
+emptyCounts :: Counts
+emptyCounts = M.empty
+
+upcounts :: (Int, Int) -> (Int, Int) -> (Int, Int)
+upcounts (a, b) (a', b') = (a + a', b + b')
+
+cWays :: [Int] -> Int -> Counts -> (Integer, Counts)
+cWays [] n m = (0, M.insertWith upcounts ([], n) (1, 0) m)
+cWays cs 0 m = (1, M.insertWith upcounts (cs, 0) (1, 0) m)
+cWays (c:cs) n m | n < 0 = (0, M.insertWith upcounts (c:cs, n) (1, 0) m)
+                 | otherwise = (x' + x'', updated) where
+                 (x', m')   = cWays (c:cs) (n - c) m
+                 (x'', m'') = cWays cs n m'
+                 belowLeft  = (snd $ fromJust $ M.lookup (c:cs, n - c) m') - (maybe 0 snd $ M.lookup (c:cs, n - c) m)
+                 belowRight = (snd $ fromJust $ M.lookup (cs, n) m'') - (maybe 0 snd $ M.lookup (cs, n) m')
+                 updated    = M.insertWith upcounts (c:cs, n) (1,  2 + belowLeft + belowRight) m''
 
 tWays :: [Int] -> Int -> Integer
 tWays [] n     = trace (show ([] :: [Int], n)) 0
@@ -89,7 +109,6 @@ ways'' coins n = evalState (f coins n) emptyTable where
     recur c n = get >>= maybe (compute c n) return . M.lookup (c, n)
     compute c n = mapState (memoize (c, n)) $ f c n
     memoize k (x, m) = (x, M.insert k x m)
-
 
 -- Problem with that style of memoizing is that the table we build up
 -- of previously computed values eventually contains every value we've
@@ -159,4 +178,4 @@ check label fn n = do
 
 main :: IO ()
 main = mapM_ (\(label, fn) -> check label fn 1) benchmarks
---main = print $ (tWays us 100)
+--main = print $ tWays us 100
