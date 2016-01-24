@@ -1,25 +1,27 @@
-W = all
+W =
 
-hlint := /Users/peter/Library/Haskell/bin/hlint
+hlint		:= /Users/peter/Library/Haskell/bin/hlint
+libs		:= simple memo1 memo2 memo2state lazy
+mains		:= benchmark trace count fib lazy-hardwired lazy-semi-hardwired
+binaries	:= $(addsuffix .o,$(libs))
 
-source = $(wildcard *.hs)
-binaries = $(basename $(source))
+all: $(mains)
 
-all: $(binaries)
-
-test: tic-tac-toe
-	./tic-tac-toe
+benchmark: $(binaries)
 
 lint:
-	$(hlint) $(source)
+	$(hlint) $(addsuffix .hs,$(libs) $(mains))
 
 clean: tidy
-	rm -f $(binaries)
+	rm -f $(mains)
 	rm -f *.hi
 	rm -f *.o
 
 tidy:
 	rm -f *~
+
+%.o: %.hs
+	stack ghc -- -O2 -W$(W) $<
 
 %: %.hs
 	stack ghc -- -O2 -W$(W) $<
