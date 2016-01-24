@@ -1,4 +1,4 @@
-W =
+W = all
 
 hlint := /Users/peter/Library/Haskell/bin/hlint
 
