@@ -11,6 +11,7 @@
 module Simple (ways) where
 
 ways :: [Int] -> Int -> Integer
-ways [] _     = 0
-ways _ 0      = 1
-ways (c:cs) n = if n < 0 then 0 else ways (c:cs) (n - c) + ways cs n
+ways [] _        = 0
+ways _ 0         = 1
+ways _ n | n < 0 = 0
+ways (c:cs) n    = ways cs n + ways (c:cs) (n - c)

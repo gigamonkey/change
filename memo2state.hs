@@ -3,9 +3,9 @@ module Memo2State (ways) where
 import Control.Monad.State
 import qualified Data.Map.Strict as M
 
--- Memoizing using the State monad. Similar to above except that the
--- Map of memoized values is threaded through the monad rather than
--- explicitly which makes things a bit more tidy.
+-- Memoizing using the State monad. Similar to memo2.hs except that
+-- the Map of memoized values is threaded through the monad rather
+-- than explicitly which makes things a bit more tidy.
 
 ways :: [Int] -> Int -> Integer
 ways coins amount = evalState (f coins amount) M.empty where

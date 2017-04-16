@@ -1,8 +1,10 @@
+PATH := $(PATH):/Users/peter/.local/bin/
+
 W =
 
 hlint		:= /Users/peter/Library/Haskell/bin/hlint
 libs		:= simple memo1 memo2 memo2state lazy
-mains		:= benchmark trace count fib lazy-hardwired lazy-semi-hardwired
+mains		:= benchmark trace count fib lazy-hardwired lazy-semi-hardwired countstate
 binaries	:= $(addsuffix .o,$(libs))
 
 all: $(mains)
